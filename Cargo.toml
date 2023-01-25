@@ -1,0 +1,35 @@
+[package]
+name          = "cw-receipt"
+authors       = ["Noah Saso <noahsaso@users.noreply.github.com>"]
+description   = "Receipt"
+version       = "0.1.0"
+edition       = "2021"
+license       = "BSD-3-Clause"
+repository    = "https://github.com/NoahSaso/cw-receipt"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-schema = "1.1.9"
+cosmwasm-std    = "1.1.9"
+cw2             = "1.0.1"
+cw20            = "1.0.1"
+cw-denom        = "2.0.2"
+cw-ownable      = "0.4.0"
+cw-paginate     = "0.1.0"
+cw-storage-plus = "1.0.1"
+cw-utils        = "1.0.1"
+schemars        = "0.8.11"
+serde           = "1.0.152"
+thiserror       = "1.0.38"
+
+[dev-dependencies]
+cw-multi-test   = "0.16.2"
+cw20-base       = "1.0.1"
