@@ -26,6 +26,7 @@ pub const PAYER_TOTALS: Map<(Addr, String), Uint128> = Map::new("payer_totals");
 
 #[cw_serde]
 pub struct Payment {
+    pub payer: Addr,
     pub block: BlockInfo,
     pub denom: CheckedDenom,
     pub amount: Uint128,

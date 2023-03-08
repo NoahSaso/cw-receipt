@@ -39,6 +39,13 @@ pub enum QueryMsg {
     #[returns(OutputResponse)]
     Output {},
 
+    /// Returns list of payments for all receipts and payers.
+    #[returns(ListPaymentsResponse)]
+    ListPayments {
+        start_after: Option<(String, u64)>,
+        limit: Option<u32>,
+    },
+
     /// Returns list of payments for receipt ID.
     #[returns(ListPaymentsToIdResponse)]
     ListPaymentsToId {
@@ -78,8 +85,15 @@ pub struct OutputResponse {
 }
 
 #[cw_serde]
-pub struct PaymentWithId {
-    pub id: u64,
+pub struct ReceiptPaymentWithoutId {
+    pub receipt_payment_id: u64,
+    pub payment: Payment,
+}
+
+#[cw_serde]
+pub struct ReceiptPayment {
+    pub receipt_id: String,
+    pub receipt_payment_id: u64,
     pub payment: Payment,
 }
 
@@ -90,8 +104,13 @@ pub struct Total {
 }
 
 #[cw_serde]
+pub struct ListPaymentsResponse {
+    pub payments: Vec<ReceiptPayment>,
+}
+
+#[cw_serde]
 pub struct ListPaymentsToIdResponse {
-    pub payments: Vec<PaymentWithId>,
+    pub payments: Vec<ReceiptPaymentWithoutId>,
 }
 
 #[cw_serde]

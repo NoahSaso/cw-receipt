@@ -4,9 +4,9 @@ use cw_denom::CheckedDenom;
 use cw_multi_test::{App, BankSudo, Contract, ContractWrapper, Executor};
 
 use crate::msg::{
-    Cw20ReceiverMsg, ExecuteMsg, InstantiateMsg, ListIdsForPayerResponse, ListPaymentsToIdResponse,
-    ListTotalsPaidByPayerResponse, ListTotalsPaidToIdResponse, OutputResponse, PaymentWithId,
-    QueryMsg, Total,
+    Cw20ReceiverMsg, ExecuteMsg, InstantiateMsg, ListIdsForPayerResponse, ListPaymentsResponse,
+    ListPaymentsToIdResponse, ListTotalsPaidByPayerResponse, ListTotalsPaidToIdResponse,
+    OutputResponse, QueryMsg, ReceiptPayment, ReceiptPaymentWithoutId, Total,
 };
 use crate::state::Payment;
 use crate::ContractError;
@@ -340,9 +340,37 @@ pub fn test_native_pay() {
     assert_eq!(
         res,
         ListPaymentsToIdResponse {
-            payments: vec![PaymentWithId {
-                id: 0,
+            payments: vec![ReceiptPaymentWithoutId {
+                receipt_payment_id: 0,
                 payment: Payment {
+                    payer: Addr::unchecked(PAYER),
+                    block: block.clone(),
+                    denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
+                    amount: Uint128::from(amount),
+                }
+            }]
+        }
+    );
+
+    // Ensure payment #0 returned in master list.
+    let res: ListPaymentsResponse = app
+        .wrap()
+        .query_wasm_smart(
+            addr.clone(),
+            &QueryMsg::ListPayments {
+                start_after: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        res,
+        ListPaymentsResponse {
+            payments: vec![ReceiptPayment {
+                receipt_id: RECEIPT_ID.to_string(),
+                receipt_payment_id: 0,
+                payment: Payment {
+                    payer: Addr::unchecked(PAYER),
                     block: block.clone(),
                     denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
                     amount: Uint128::from(amount),
@@ -434,17 +462,58 @@ pub fn test_native_pay() {
         res,
         ListPaymentsToIdResponse {
             payments: vec![
-                PaymentWithId {
-                    id: 0,
+                ReceiptPaymentWithoutId {
+                    receipt_payment_id: 0,
                     payment: Payment {
+                        payer: Addr::unchecked(PAYER),
                         block: block.clone(),
                         denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
                         amount: Uint128::from(amount),
                     }
                 },
-                PaymentWithId {
-                    id: 1,
+                ReceiptPaymentWithoutId {
+                    receipt_payment_id: 1,
                     payment: Payment {
+                        payer: Addr::unchecked(PAYER),
+                        block: block.clone(),
+                        denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
+                        amount: Uint128::from(amount * 2),
+                    }
+                }
+            ]
+        }
+    );
+
+    // Ensure two payments are stored in master list.
+    let res: ListPaymentsResponse = app
+        .wrap()
+        .query_wasm_smart(
+            addr.clone(),
+            &QueryMsg::ListPayments {
+                start_after: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        res,
+        ListPaymentsResponse {
+            payments: vec![
+                ReceiptPayment {
+                    receipt_id: RECEIPT_ID.to_string(),
+                    receipt_payment_id: 0,
+                    payment: Payment {
+                        payer: Addr::unchecked(PAYER),
+                        block: block.clone(),
+                        denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
+                        amount: Uint128::from(amount),
+                    }
+                },
+                ReceiptPayment {
+                    receipt_id: RECEIPT_ID.to_string(),
+                    receipt_payment_id: 1,
+                    payment: Payment {
+                        payer: Addr::unchecked(PAYER),
                         block,
                         denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
                         amount: Uint128::from(amount * 2),
@@ -600,9 +669,37 @@ pub fn test_cw20_pay() {
     assert_eq!(
         res,
         ListPaymentsToIdResponse {
-            payments: vec![PaymentWithId {
-                id: 0,
+            payments: vec![ReceiptPaymentWithoutId {
+                receipt_payment_id: 0,
                 payment: Payment {
+                    payer: Addr::unchecked(PAYER),
+                    block: block.clone(),
+                    denom: CheckedDenom::Cw20(cw20_addr.clone()),
+                    amount: Uint128::from(amount),
+                }
+            }]
+        }
+    );
+
+    // Ensure payment #0 is stored in master list.
+    let res: ListPaymentsResponse = app
+        .wrap()
+        .query_wasm_smart(
+            addr.clone(),
+            &QueryMsg::ListPayments {
+                start_after: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        res,
+        ListPaymentsResponse {
+            payments: vec![ReceiptPayment {
+                receipt_id: RECEIPT_ID.to_string(),
+                receipt_payment_id: 0,
+                payment: Payment {
+                    payer: Addr::unchecked(PAYER),
                     block: block.clone(),
                     denom: CheckedDenom::Cw20(cw20_addr.clone()),
                     amount: Uint128::from(amount),
@@ -720,17 +817,58 @@ pub fn test_cw20_pay() {
         res,
         ListPaymentsToIdResponse {
             payments: vec![
-                PaymentWithId {
-                    id: 0,
+                ReceiptPaymentWithoutId {
+                    receipt_payment_id: 0,
                     payment: Payment {
+                        payer: Addr::unchecked(PAYER),
                         block: block.clone(),
                         denom: CheckedDenom::Cw20(cw20_addr.clone()),
                         amount: Uint128::from(amount),
                     }
                 },
-                PaymentWithId {
-                    id: 1,
+                ReceiptPaymentWithoutId {
+                    receipt_payment_id: 1,
                     payment: Payment {
+                        payer: Addr::unchecked(PAYER),
+                        block: block.clone(),
+                        denom: CheckedDenom::Cw20(cw20_addr.clone()),
+                        amount: Uint128::from(amount * 2),
+                    }
+                }
+            ]
+        }
+    );
+
+    // Ensure two payments are stored in master list.
+    let res: ListPaymentsResponse = app
+        .wrap()
+        .query_wasm_smart(
+            addr.clone(),
+            &QueryMsg::ListPayments {
+                start_after: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        res,
+        ListPaymentsResponse {
+            payments: vec![
+                ReceiptPayment {
+                    receipt_id: RECEIPT_ID.to_string(),
+                    receipt_payment_id: 0,
+                    payment: Payment {
+                        payer: Addr::unchecked(PAYER),
+                        block: block.clone(),
+                        denom: CheckedDenom::Cw20(cw20_addr.clone()),
+                        amount: Uint128::from(amount),
+                    }
+                },
+                ReceiptPayment {
+                    receipt_id: RECEIPT_ID.to_string(),
+                    receipt_payment_id: 1,
+                    payment: Payment {
+                        payer: Addr::unchecked(PAYER),
                         block,
                         denom: CheckedDenom::Cw20(cw20_addr.clone()),
                         amount: Uint128::from(amount * 2),
@@ -914,17 +1052,58 @@ pub fn test_both_pay() {
         res,
         ListPaymentsToIdResponse {
             payments: vec![
-                PaymentWithId {
-                    id: 0,
+                ReceiptPaymentWithoutId {
+                    receipt_payment_id: 0,
                     payment: Payment {
+                        payer: Addr::unchecked(PAYER),
                         block: block.clone(),
                         denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
                         amount: Uint128::from(native_amount),
                     }
                 },
-                PaymentWithId {
-                    id: 1,
+                ReceiptPaymentWithoutId {
+                    receipt_payment_id: 1,
                     payment: Payment {
+                        payer: Addr::unchecked(PAYER),
+                        block: block.clone(),
+                        denom: CheckedDenom::Cw20(cw20_addr.clone()),
+                        amount: Uint128::from(cw20_amount),
+                    }
+                }
+            ]
+        }
+    );
+
+    // Ensure two payments are stored in master list. First native, then cw20.
+    let res: ListPaymentsResponse = app
+        .wrap()
+        .query_wasm_smart(
+            addr.clone(),
+            &QueryMsg::ListPayments {
+                start_after: None,
+                limit: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        res,
+        ListPaymentsResponse {
+            payments: vec![
+                ReceiptPayment {
+                    receipt_id: RECEIPT_ID.to_string(),
+                    receipt_payment_id: 0,
+                    payment: Payment {
+                        payer: Addr::unchecked(PAYER),
+                        block: block.clone(),
+                        denom: CheckedDenom::Native(NATIVE_DENOM.to_string()),
+                        amount: Uint128::from(native_amount),
+                    }
+                },
+                ReceiptPayment {
+                    receipt_id: RECEIPT_ID.to_string(),
+                    receipt_payment_id: 1,
+                    payment: Payment {
+                        payer: Addr::unchecked(PAYER),
                         block,
                         denom: CheckedDenom::Cw20(cw20_addr.clone()),
                         amount: Uint128::from(cw20_amount),

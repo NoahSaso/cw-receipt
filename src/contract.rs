@@ -9,9 +9,9 @@ use cw_utils::nonpayable;
 
 use crate::error::ContractError;
 use crate::msg::{
-    Cw20ReceiverMsg, ExecuteMsg, InstantiateMsg, ListIdsForPayerResponse, ListPaymentsToIdResponse,
-    ListTotalsPaidByPayerResponse, ListTotalsPaidToIdResponse, OutputResponse, PaymentWithId,
-    QueryMsg, Total,
+    Cw20ReceiverMsg, ExecuteMsg, InstantiateMsg, ListIdsForPayerResponse, ListPaymentsResponse,
+    ListPaymentsToIdResponse, ListTotalsPaidByPayerResponse, ListTotalsPaidToIdResponse,
+    OutputResponse, QueryMsg, ReceiptPayment, ReceiptPaymentWithoutId, Total,
 };
 use crate::state::{
     Payment, OUTPUT, PAYER_RECEIPTS, PAYER_TOTALS, RECEIPT_PAYMENTS, RECEIPT_PAYMENT_COUNT,
@@ -199,6 +199,7 @@ fn record_payment_and_get_transfer_msg(
         storage,
         (id.to_string(), receipt_payment_count),
         &Payment {
+            payer: payer.clone(),
             block: env.block.clone(),
             denom: denom.clone(),
             amount,
@@ -238,6 +239,10 @@ fn string_to_denom(s: String) -> Option<CheckedDenom> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::ListPayments { start_after, limit } => {
+            query_list_payments(deps, start_after, limit)
+        }
+
         QueryMsg::ListPaymentsToId {
             id,
             start_after,
@@ -270,6 +275,28 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
+pub fn query_list_payments(
+    deps: Deps,
+    start_after: Option<(String, u64)>,
+    limit: Option<u32>,
+) -> StdResult<Binary> {
+    let payments = cw_paginate::paginate_map(
+        RECEIPT_PAYMENTS,
+        deps.storage,
+        start_after.map(Bound::exclusive),
+        limit,
+        |(receipt_id, receipt_payment_id), payment| {
+            Ok::<ReceiptPayment, StdError>(ReceiptPayment {
+                receipt_id,
+                receipt_payment_id,
+                payment,
+            })
+        },
+    )?;
+
+    to_binary(&ListPaymentsResponse { payments })
+}
+
 pub fn query_list_payments_to_id(
     deps: Deps,
     id: String,
@@ -282,7 +309,12 @@ pub fn query_list_payments_to_id(
         id,
         start_after.map(Bound::exclusive),
         limit,
-        |id, payment| Ok::<PaymentWithId, StdError>(PaymentWithId { id, payment }),
+        |receipt_payment_id, payment| {
+            Ok::<ReceiptPaymentWithoutId, StdError>(ReceiptPaymentWithoutId {
+                receipt_payment_id,
+                payment,
+            })
+        },
     )?;
 
     to_binary(&ListPaymentsToIdResponse { payments })
