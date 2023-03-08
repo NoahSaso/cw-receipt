@@ -2,7 +2,7 @@
 name          = "cw-receipt"
 authors       = ["Noah Saso <noahsaso@users.noreply.github.com>"]
 description   = "Receipt"
-version       = "0.1.0"
+version       = "0.2.0"
 edition       = "2021"
 license       = "BSD-3-Clause"
 repository    = "https://github.com/NoahSaso/cw-receipt"
